@@ -26,6 +26,30 @@ class FFTPipeline:
 
         # Apply mask and inverse FFT
         fshift_filtered = fshift * mask
+        
+        print(f"fshift shape: {fshift.shape} ")
+        print(f"mask shape: {mask.shape} ")
+        print(f"img shape: {img.shape} ")
+
+        # Visualization
+        plt.figure(figsize=(12, 5))
+        plt.subplot(1, 3, 1)
+        plt.imshow(np.log1p(np.abs(fshift)), cmap='gray')
+        plt.title("FFT Magnitude Spectrum")
+        plt.axis("off")
+        
+        plt.subplot(1, 3, 2)
+        plt.imshow(mask, cmap='gray')
+        plt.title(f"High-Pass Filter Mask, size: {size}")
+        plt.axis("off")
+        
+        plt.subplot(1, 3, 3)
+        plt.imshow(np.log1p(np.abs(fshift_filtered)), cmap='gray')
+        plt.title("Filtered FFT Spectrum")
+        plt.axis("off")
+        
+        plt.show()
+
         return fshift_filtered  # Keep in frequency domain
 
     def inverse_fft(self, fshift_filtered):
@@ -33,7 +57,9 @@ class FFTPipeline:
         f_ishift = np.fft.ifftshift(fshift_filtered)
         img_back = np.fft.ifft2(f_ishift)
         img_back = np.abs(img_back)
-        
+        print(f"f_ishift shape: {f_ishift.shape} ")
+        print(f"img_back shape: {img_back.shape} ")
+
         # Normalize result to 0-255 range
         img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
         return img_back
@@ -63,23 +89,10 @@ class FFTPipeline:
         return filtered_defect_map
     
     def visualize(self):
-        # Visualize the results
-        plt.figure(figsize=(12, 5))
-        plt.subplot(1, 3, 1)
-        plt.imshow(self.img2, cmap='gray')
-        plt.title("Reference Image (Original, Gaussian Blurred)")
-        plt.axis("off")
-
-        plt.subplot(1, 3, 2)
-        plt.imshow(self.img1, cmap='gray')
-        plt.title("Inspected Image (Original, Gaussian Blurred)")
-        plt.axis("off")
-
         plt.subplot(1, 3, 3)
         plt.imshow(self.filtered_defect_map, cmap='hot')
-        plt.title("Defect Map (FFT-Based High-Pass Filtering)")
+        plt.title(f"Defect Map (FFT-Based High-Pass Filtering), Gauss Kernel = {self.gaus_kernel}, Filter Size = {self.size}")
         plt.axis("off")
         plt.colorbar()
-
         plt.show()
 

@@ -58,9 +58,9 @@ if plot:
 
 # ------------------- Producting Defect Map -----------------------------------------
 # --- 1: GMM ------------------------------------------------------------------------
-gmmpipe = GMMPipeline(align.aligned_img, align.img2)
+gmmpipe = GMMPipeline(align.aligned_img, align.img2, n_components=10, percentile=20)
 prob_map = gmmpipe.train()
-defect_mask = gmmpipe.threshold(percentile=20)
+defect_mask = gmmpipe.threshold()
 gmmpipe.visualize()
 # Normalize the GMM probability map to [0, 1]
 # Here, we assume lower probability indicates a defect, so invert it:
@@ -88,17 +88,20 @@ plt.figure(figsize=(15, 5))
 plt.subplot(1,3,1)
 plt.imshow(confidence_gmm, cmap='jet')
 plt.title("GMM Defect Confidence")
+plt.colorbar()
 plt.axis("off")
 
 plt.subplot(1,3,2)
 plt.imshow(confidence_fft, cmap='jet')
 plt.title("FFT Defect Confidence")
 plt.axis("off")
+plt.colorbar()
 
 plt.subplot(1,3,3)
 plt.imshow(combined_confidence, cmap='jet')
 plt.title("Combined Confidence")
 plt.axis("off")
+plt.colorbar()
 plt.show()
 
 # Now threshold the combined confidence to get a binary defect mask.
@@ -114,7 +117,7 @@ plt.axis("off")
 plt.show()
 
 # ---------- Postprocessing ------------------------------------------
-postprocess = Postprocess(final_voted_mask, align.img2, align.homography, gaus_kernel = 13, size = 2)
+postprocess = Postprocess(final_voted_mask, max_defects=5, ar_thresh=(0.5, 2.0), circularity_thresh=0.3, solidity_thresh=0.85)
 # Filter and retain only object candidates
 filtered_mask = postprocess.filter_defect_candidates(final_voted_mask, max_defects=5)
 postprocess.visualize()

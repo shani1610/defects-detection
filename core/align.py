@@ -126,10 +126,12 @@ class Align:
         
         if self.plot:
             plt.figure(figsize=(10, 5))
-            plt.imshow(self.img2, cmap='gray', alpha=0.5, label='Reference Image')
-            plt.imshow(self.aligned_img, cmap='jet', alpha=0.5, label='Aligned Image')
+            img = plt.imshow(self.img2, cmap='gray', alpha=0.5, label='Reference Image')
+            img_overlay = plt.imshow(self.aligned_img, cmap='jet', alpha=0.5, label='Aligned Image')
+            
             plt.title("Overlay of Aligned Image on Reference Image")
             plt.axis("off")
+            plt.colorbar(img_overlay)  # Add color bar explicitly
             plt.show()
 
         if self.refine: # TO DO: fix and check if the projection error in lower
