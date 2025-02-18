@@ -1,59 +1,113 @@
 
+# Report on Defect Detection
+
+## Introduction
+
+Semiconductors are manufactured using silicon, and individual silicon pieces are sampled to identify defects. Traditionally, defect detection involves comparing one chip with its neighboring chip due to the generally low probability of defects. In this report, I propose a novel approach that leverages both a reference image and an inspected image to detect defects more effectively.
+
+**Challenges**
+Defects can vary significantly in size, from as small as a single pixel to as large as half the image, and may exhibit diverse shapes and intensity levels, presenting a complex detection scenario.
+
+**Goal**
+The objective is to develop a highly generic algorithm that can adapt to various defect characteristics and imaging conditions.
+
+**Output**
+The final output will be a binary image clearly indicating the detected defects.
+
+## Examine
+
+First, let's examine what our inputs and desired output are.
+
+Image:
+
+<img src="./images/inspectedvsref.png" alt="drawing" width="200"/>
+
+In this image, we can see on the right the inspected image compared to the reference image.
 
 
-image:
+<img src="./images/defectsvisualizationfromtxt.png" alt="drawing" width="200"/> 
 
-inspectedvsref.png
-in the image we can see on the right the inspected image versus the reference image
+Here are the defects marked by the locations given in the text (a circle of size 10 around each location). We can see that defect #1 is quite noticeable, but defects #2 and #3 are harder to detect. 
 
-defectsvisualizationfromtxt.png
-here is the defects by the locations given in the text (circle of size 10 around each location),
-we can see clearly #1 a quite noticle but #2 and #3 are harder to detect. 
+<img src="./images/images_histograms.png" alt="drawing" width="200"/> 
 
-
-images_histograms.png
-here is the histogram and some statistical inormation, we can see around 42 graylevel we have a pick in the defect that is not seen in the reference. over all the histogram and stasitsc are quite similar so we didnt apply any normalization or standartization or other operations. 
+This image shows the histogram and some statistical information. We can see that around gray level 42 there is a peak in the defect that is not seen in the reference. Overall, the histogram and statistics are quite similar, so we didn't apply any normalization, standardization, or other operations.
 
 # Alignment 
 
-althought the images are alike and have the same orientation and grayscale ditribution the images are not completely aligned and in order to get the defect we have to align them. 
-alignment can be done using feature matching approaches. 
-the most known one is SIFT, which is based on 3 step: intrests points detection, description of these intrest points using histogram of orientation graidents, and matching of the description by knn or other matcher. 
-results with SIFT weren't good, so I used ORB. 
+Although the images are similar and have the same orientation and grayscale distribution, they are not perfectly aligned. To accurately detect the defects, the images must be aligned. Alignment can be achieved using feature matching approaches. The most well-known method is SIFT, which is based on three steps: interest point detection, description of these interest points using a histogram of oriented gradients, and matching of the descriptions using kNN or another matcher. However, results with SIFT weren't satisfactory, so I used ORB.
 
 ** write about ORB **
-orb_keypoints.png 
-here we can see the keypoints from orb, the size of the blob indicates the intrest point region (a corner in a big blob is not a neccassarley a corner in a smaller blob). and the line is the prinicipal orientation. 
 
-after the feature matching, we can go over to the homography calculation. we use RANSAC which is an iterative method to refine the model and get model which is a consensus of most matches. 
+<img src="./images/orb_keypoints.png" alt="drawing" width="200"/>
 
-orb_inliers_matches.png
-here we can see the inlier matches, we can see quite good correspondence. 
+Here we can see the keypoints from ORB. The size of the blob indicates the interest point region (a corner in a large blob is not necessarily a corner in a smaller blob), and the line represents the principal orientation.
 
-we use the function wrapPerspceitve and wrap the images on top of eachother. 
+After feature matching, we proceed to homography calculation using RANSAC, an iterative method to refine the model and achieve a consensus among most matches.
 
-overlayed.png
-we can see in the images that there are parts that are not exactly overlayed perfectly, some of the edges are different.
-this image hints about the future issues. 
+<img src="./images/orb_inliers_matches.png" alt="drawing" width="200"/> 
 
-we calculate the differance image, idially we would like only the defects to be shown in the differance image, 
-cuz all the rest should be the same. but in fact we can see clearly some of the edges of the chip pattern are shown and noise. 
+Here we can see the inlier matches, which show quite good correspondence.
 
-diff_image.png
-the diff image show us some of the problems better. 
 
-we leave the alignment as is for now and going over to other ways to detect the defects with the alignment we have at the moment.
-for future reference it is possible to use ECC iterative refinment and use the homography as an initial point, 
-other way is also using other feature matching techniques such as LoFTR and its procedings, which is a detector-free transformers based feature matcher. 
+We then use the function ```warpPerspective``` to overlay the images on top of each other.
 
-the approach i was thinking about is using Gaussian Mixture Model (GMM) when using the reference image as the background, 
-my goal was to try to distinguish the defects as the foreground and to use this kind of separation. 
-but unfortunatly the edges of the patterns were classified as foregorund too. 
-i use 10 components in the gmm training, i used threshold that uses percentile of 20 for the binary mask creation. 
-these two are hyperparameters and it is possible to tune them but since the method should be general as possible i leave it as is. 
+<img src="./images/overlayed.png" alt="drawing" width="200"/> 
+
+In this image, there are parts that are not perfectly overlaid; some of the edges differ. This hints at potential future issues.
+
+Next, we calculate the difference image. Ideally, only the defects should be visible in the difference image, since everything else should be identical. However, we can clearly see some of the chip pattern edges and noise.
+
+
+<img src="./images/diff_image.png" alt="drawing" width="200"/> 
+
+The difference image highlights some of these issues more clearly.
+
+For now, we leave the alignment as is and move on to other methods of defect detection with the current alignment. For future reference, it is possible to use ECC iterative refinement and use the homography as an initial point. Alternatively, other feature matching techniques, such as LoFTR—a detector-free, transformer-based feature matcher—could be considered.
+
+## GMM 
+
+The approach I was considering involves using a Gaussian Mixture Model (GMM), with the reference image serving as the background. The goal was to distinguish the defects as the foreground. Unfortunately, the edges of the patterns were also classified as foreground. I used 10 components in the GMM training and applied a threshold at the 20th percentile for binary mask creation. These hyperparameters can be tuned, but since the method should be as general as possible, I left them as is.
 
 ** write about GMM **
 
-gmm_10_20_res.png
-on the right is the probability map where blue mean it is higly likely to be foreground and the red indicated is it likley to be background. 
+<img src="./images/gmm_10_20_res.png" alt="drawing" width="200"/>
+
+On the right is the probability map, where blue indicates a high likelihood of being foreground and red indicates likely background.
+
+## FFT 
+
+We apply FFT transformation to both the aligned inspected image and the reference image. A high-pass filter is applied (with the filter size as a tunable parameter), followed by the computation of a difference image. Then, the inverse FFT is applied to convert the data back from the frequency domain to the spatial domain.
+
+<img src="./images/fft_example_2.png" alt="drawing" width="200"/> 
+
+This image shows the FFT transformation. The black dot indicates that a filter of a certain size was applied; this is the high-pass filter. 
+
+<img src="./images/fft_example_48.png" alt="drawing" width="200"/> 
+
+This image represents the low-pass filter, which yielded better results. 
+
+<img src="./images/fft_defect_map.png" alt="drawing" width="200"/> 
+
+This is the difference image after processing in the frequency domain. The defects are clearly visible, but unfortunately, some of the edges are also present.
+
+n the high-pass filter, the mask blocks the center, which in the spatial domain translates to sharp details and removal of smooth variations. In the low-pass filter, the mask preserves smooth details. I found that, in this context, the low-pass filter is preferable as it cleans up the noise while still capturing the defects.
+
+We observe that the borders exhibit high differences; this could potentially be resolved using zero padding. However, zero padding alone did not fully resolve the issue.
+
+## Combine
+
+Now we want to combine the insights from the GMM and FFT approaches to create a combined defect map. This method is still under evaluation to ensure that both contributions are effectively integrated.
+
+<img src="./images/voting.png" alt="drawing" width="200"/> 
+
+Here you can see the probability maps from the GMM, the FFT result, and their multiplication.
+
+## Postprocessing 
+
+Finally, thresholding is applied, and we selected the 5 largest contours. This is not the optimal approach; it would be better to select contours based on shape or other characteristics, which remains a subject for future work.
+
+<img src="./images/voted_mask.png" alt="drawing" width="200"/> 
+
+This is the current result. The next task will be to find a way to detect defect #2, and we also observed noise at the borders, which remains unresolved as zero padding alone did not help.
 

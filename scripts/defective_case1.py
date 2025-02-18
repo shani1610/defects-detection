@@ -58,7 +58,9 @@ if plot:
 
 # ------------------- Producting Defect Map -----------------------------------------
 # --- 1: GMM ------------------------------------------------------------------------
-gmmpipe = GMMPipeline(align.aligned_img, align.img2, n_components=10, percentile=20)
+n_components=10
+percentile=20
+gmmpipe = GMMPipeline(align.aligned_img, align.img2, n_components=n_components, percentile=percentile)
 prob_map = gmmpipe.train()
 defect_mask = gmmpipe.threshold()
 gmmpipe.visualize()
@@ -68,7 +70,10 @@ normalized_prob = cv2.normalize(prob_map, None, alpha=0, beta=1, norm_type=cv2.N
 confidence_gmm = 1.0 - normalized_prob  # higher values indicate higher defect likelihood
 
 # --- 2: FFT ------------------------------------------------------------------------
-fftpipe = FFTPipeline(align.aligned_img, align.img2, align.homography, gaus_kernel = 13, size = 2)
+gaus_kernel = 13
+size = 48
+high_pass_filter = False
+fftpipe = FFTPipeline(align.aligned_img, align.img2, high_pass_filter, align.homography, gaus_kernel = gaus_kernel, size = size)
 filtered_defect_map = fftpipe.applyftt()
 fftpipe.visualize()
 # Calculate lower and upper percentile thresholds
@@ -87,32 +92,33 @@ combined_confidence = confidence_gmm * confidence_fft
 plt.figure(figsize=(15, 5))
 plt.subplot(1,3,1)
 plt.imshow(confidence_gmm, cmap='jet')
-plt.title("GMM Defect Confidence")
+plt.title(f"GMM Defect Confidence\n num components = {n_components}\n percentile = {percentile}", fontsize=12, fontweight='bold')
 plt.colorbar()
 plt.axis("off")
 
 plt.subplot(1,3,2)
 plt.imshow(confidence_fft, cmap='jet')
-plt.title("FFT Defect Confidence")
+plt.title(f"FFT Defect Confidence\n Gaus Kernel = {gaus_kernel}\n size = {size}", fontsize=12, fontweight='bold')
 plt.axis("off")
 plt.colorbar()
 
 plt.subplot(1,3,3)
 plt.imshow(combined_confidence, cmap='jet')
-plt.title("Combined Confidence")
+plt.title("Combined Confidence\n (multiplicaiton)", fontsize=12, fontweight='bold')
 plt.axis("off")
 plt.colorbar()
 plt.show()
 
 # Now threshold the combined confidence to get a binary defect mask.
 # The threshold value (e.g., 0.5) might need to be adjusted.
-_, final_voted_mask = cv2.threshold(combined_confidence, 0.5, 1.0, cv2.THRESH_BINARY)
+threshold_val = 0.5
+_, final_voted_mask = cv2.threshold(combined_confidence, threshold_val, 1.0, cv2.THRESH_BINARY)
 final_voted_mask = (final_voted_mask * 255).astype(np.uint8)
 
 # Visualize the final binary mask
 plt.figure(figsize=(6, 6))
 plt.imshow(final_voted_mask, cmap='gray')
-plt.title("Final Voted Defect Mask")
+plt.title(f"Final Voted Defect Mask\n threshold val = {threshold_val}")
 plt.axis("off")
 plt.show()
 
@@ -122,6 +128,6 @@ postprocess = Postprocess(final_voted_mask, max_defects=5, ar_thresh=(0.5, 2.0),
 filtered_mask = postprocess.filter_defect_candidates(final_voted_mask, max_defects=5)
 postprocess.visualize()
 # Filter defects based on shape
-filtered_mask = postprocess.filter_defects_by_shape(final_voted_mask, max_defects=5, ar_thresh=(0.5, 2.0), circularity_thresh=0.3, solidity_thresh=0.85)
-postprocess.visualize()
+#filtered_mask = postprocess.filter_defects_by_shape(final_voted_mask, max_defects=5, ar_thresh=(0.5, 2.0), circularity_thresh=0.3, solidity_thresh=0.85)
+#postprocess.visualize()
 

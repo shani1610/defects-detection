@@ -3,26 +3,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class FFTPipeline:
-    def __init__(self, img1, img2, homography, gaus_kernel, size):
+    def __init__(self, img1, img2, high_pass_filter_mode, homography, gaus_kernel, size):
         self.img1 = img1
         self.img2 = img2
+        self.high_pass_filter_mode = high_pass_filter_mode
         self.homography = homography
         self.gaus_kernel = gaus_kernel
         self.size = size
         self.filtered_defect_map = None
 
-    def high_pass_filter(self, img, size):
+    def pad_image(self, img):
+        """ Apply zero-padding to the image to reduce border effects in FFT. """
+        rows, cols = img.shape
+        padded_img = np.pad(img, ((rows//2, rows//2), (cols//2, cols//2)), mode='constant', constant_values=0)
+        return padded_img
+    
+    def fft_filter(self, img, size):
         """ Apply high-pass filtering using FFT to retain only high-frequency details. """
-        f = np.fft.fft2(img)
+        padded_img = self.pad_image(img)  # Apply zero-padding
+        f = np.fft.fft2(padded_img)
         fshift = np.fft.fftshift(f)
         
         # Get image dimensions
-        rows, cols = img.shape
+        rows, cols = padded_img.shape
         crow, ccol = rows // 2 , cols // 2
 
         # Create high-pass filter mask
-        mask = np.ones((rows, cols), np.uint8)
-        mask[crow-size:crow+size, ccol-size:ccol+size] = 0  # Block low frequencies
+        if self.high_pass_filter_mode:
+            mask = np.ones((rows, cols), np.uint8)
+            mask[crow-size:crow+size, ccol-size:ccol+size] = 0  # Block low frequencies
+        else:
+            mask = np.zeros((rows, cols), np.uint8)
+            mask[crow-size:crow+size, ccol-size:ccol+size] = 1 # Keep low frequencies
 
         # Apply mask and inverse FFT
         fshift_filtered = fshift * mask
@@ -70,16 +82,18 @@ class FFTPipeline:
         self.img1 = cv2.GaussianBlur(self.img1, (self.gaus_kernel, self.gaus_kernel), 0)
         
         # Step 1: Move both images to frequency domain and apply high-pass filter
-        fshift_ref = self.high_pass_filter(self.img2, self.size) # i choose 2 cuz bigger delete the defects
-        fshift_inspected = self.high_pass_filter(self.img1, self.size)
+        fshift_ref = self.fft_filter(self.img2, self.size) # i choose 2 cuz bigger delete the defects
+        fshift_inspected = self.fft_filter(self.img1, self.size)
 
         # Step 2: Compute the difference in frequency domain
         fshift_diff = fshift_inspected - fshift_ref
     
         # Step 3: Move back to spatial domain
         filtered_defect_map = self.inverse_fft(fshift_diff)
-
         h, w = self.img2.shape  # Reference image dimensions
+        start_x, start_y = (filtered_defect_map.shape[1] - w) // 2, (filtered_defect_map.shape[0] - h) // 2
+        filtered_defect_map = filtered_defect_map[start_y:start_y+h, start_x:start_x+w]  # Crop to original size (because of zero padding)
+
         mask = np.ones_like(self.img1, dtype=np.uint8) * 255
         warped_mask = cv2.warpPerspective(mask, self.homography, (w, h))
 
@@ -87,11 +101,10 @@ class FFTPipeline:
         self.filtered_defect_map = filtered_defect_map
         
         return filtered_defect_map
-    
+
     def visualize(self):
-        plt.subplot(1, 3, 3)
         plt.imshow(self.filtered_defect_map, cmap='hot')
-        plt.title(f"Defect Map (FFT-Based High-Pass Filtering), Gauss Kernel = {self.gaus_kernel}, Filter Size = {self.size}")
+        plt.title(f"Defect Map (FFT-Based High-Pass Filtering) \n Gauss Kernel = {self.gaus_kernel} \nFilter Size = {self.size}")
         plt.axis("off")
         plt.colorbar()
         plt.show()
