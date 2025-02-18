@@ -1,0 +1,9 @@
+opencv-python
+numpy
+matplotlib
+tifffile
+imageio
+scipy
+scikit-image
+scikit-learn
+
