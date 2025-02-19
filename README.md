@@ -2,8 +2,15 @@
 
 This project focuses on detecting and analyzing defects in semiconductor chips by aligning inspected and reference images.
 
+technical report is provided [here](https://github.com/shani1610/defects-detection/tree/main/report).
 
-File Structure:
+# Table of Contents
+
+1. [File Structure](#file-structure)
+2. [Installation](#installation)
+3. [Running](#running)
+
+# File Structure:
 
 ```
 defect-detection/

@@ -15,7 +15,9 @@ class Visualize:
         self.img1 = self.load_image(img1)
         self.img2 = self.load_image(img2)
         self.img3 = self.load_image(img3) if img3 is not None else None
-    
+        
+        self.defect_locations = None
+
     def load_image(self, img):
         """
         Load an image if the input is a path, otherwise return the input assuming it's already an image array.
@@ -76,7 +78,7 @@ class Visualize:
                     parts = line.split('x=')[1]
                     x, y = map(int, parts.replace('y=', '').split(','))
                     defect_locations.append((x, y))
-        
+        self.defect_locations = defect_locations
         return defect_locations
     
     def visualize_defects(self, defects_file):
@@ -105,7 +107,7 @@ class Visualize:
         else:
             print("No inspected image found to visualize defects.")
 
-    def segment_defects(self, centers, tolerance=10):
+    def segment_defects(self):
         """
         Segments defects in the inspected image using a flood-fill algorithm from given center locations.
         
@@ -116,6 +118,8 @@ class Visualize:
         Returns:
         - mask: A binary mask (boolean NumPy array) where True indicates the defect regions.
         """
+        centers = self.defect_locations
+        tolerance = 20
         if self.img1 is None:
             print("No inspected image loaded for segmentation.")
             return None

@@ -18,18 +18,19 @@ from core.gmmpipe import GMMPipeline  # Import the new Analyze class
 from core.fftpipe import FFTPipeline  # Import the new Analyze class
 from core.postprocess import Postprocess  # Import the new Analyze class
 
-plot = False
+plot = True
 
 # Paths to images
-image1_path = "data/defective/case1_inspected_image.tif"
-image2_path = "data/defective/case1_reference_image.tif"
+image1_path = "data/defective/case2_inspected_image.tif"
+image2_path = "data/defective/case2_reference_image.tif"
 defects_file = "data/defective/defects locations.txt"
 
 # Create visualization instance and display images
 vis = Visualize(image1_path, image2_path)
 if plot:
     vis.show_two_images()
-    vis.visualize_defects(defects_file)
+    #vis.visualize_defects(defects_file)
+    #vis.segment_defects()
 
 # Perform analysis on the images
 analyze = Analyze(image1_path, image2_path)
