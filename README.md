@@ -1,10 +1,12 @@
-# defects-detection
+# Defect Detection in Semiconductor Chips
+
+This project focuses on detecting and analyzing defects in semiconductor chips by aligning inspected and reference images.
+
 
 File Structure:
-kotlin
 
 ```
-project_root/
+defect-detection/
 │── core/
 │   ├── __init__.py
 │   ├── visualize.py
@@ -17,6 +19,13 @@ project_root/
 ```
 
 # Installation:
+
+Clone the repository 
+
+```
+git clone https://github.com/shani1610/defects-detection.git
+cd defects-detection
+```
 
 Create a Virtual Environment
 
