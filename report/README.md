@@ -20,7 +20,7 @@ First, let's examine what our inputs and desired output are.
 
 Image:
 
-<img src="./images/inspectedvsref.png" alt="drawing" width="200"/>
+<img src="./images/inspectedvsref.png" alt="drawing" width="400"/>
 
 In this image, we can see on the right the inspected image compared to the reference image.
 
@@ -29,7 +29,7 @@ In this image, we can see on the right the inspected image compared to the refer
 
 Here are the defects marked by the locations given in the text (a circle of size 10 around each location). We can see that defect #1 is quite noticeable, but defects #2 and #3 are harder to detect. 
 
-<img src="./images/images_histograms.png" alt="drawing" width="200"/> 
+<img src="./images/images_histograms.png" alt="drawing" width="400"/> 
 
 This image shows the histogram and some statistical information. We can see that around gray level 42 there is a peak in the defect that is not seen in the reference. Overall, the histogram and statistics are quite similar, so we didn't apply any normalization, standardization, or other operations.
 
@@ -39,27 +39,27 @@ Although the images are similar and have the same orientation and grayscale dist
 
 ** write about ORB **
 
-<img src="./images/orb_keypoints.png" alt="drawing" width="200"/>
+<img src="./images/orb_keypoints.png" alt="drawing" width="400"/>
 
 Here we can see the keypoints from ORB. The size of the blob indicates the interest point region (a corner in a large blob is not necessarily a corner in a smaller blob), and the line represents the principal orientation.
 
 After feature matching, we proceed to homography calculation using RANSAC, an iterative method to refine the model and achieve a consensus among most matches.
 
-<img src="./images/orb_inliers_matches.png" alt="drawing" width="200"/> 
+<img src="./images/orb_inliers_matches.png" alt="drawing" width="400"/> 
 
 Here we can see the inlier matches, which show quite good correspondence.
 
 
 We then use the function ```warpPerspective``` to overlay the images on top of each other.
 
-<img src="./images/overlayed.png" alt="drawing" width="200"/> 
+<img src="./images/overlayed.png" alt="drawing" width="300"/> 
 
 In this image, there are parts that are not perfectly overlaid; some of the edges differ. This hints at potential future issues.
 
 Next, we calculate the difference image. Ideally, only the defects should be visible in the difference image, since everything else should be identical. However, we can clearly see some of the chip pattern edges and noise.
 
 
-<img src="./images/diff_image.png" alt="drawing" width="200"/> 
+<img src="./images/diff_image.png" alt="drawing" width="400"/> 
 
 The difference image highlights some of these issues more clearly.
 
@@ -71,7 +71,7 @@ The approach I was considering involves using a Gaussian Mixture Model (GMM), wi
 
 ** write about GMM **
 
-<img src="./images/gmm_10_20_res.png" alt="drawing" width="200"/>
+<img src="./images/gmm_10_20_res.png" alt="drawing" width="400"/>
 
 On the right is the probability map, where blue indicates a high likelihood of being foreground and red indicates likely background.
 
@@ -79,15 +79,15 @@ On the right is the probability map, where blue indicates a high likelihood of b
 
 We apply FFT transformation to both the aligned inspected image and the reference image. A high-pass filter is applied (with the filter size as a tunable parameter), followed by the computation of a difference image. Then, the inverse FFT is applied to convert the data back from the frequency domain to the spatial domain.
 
-<img src="./images/fft_example_2.png" alt="drawing" width="200"/> 
+<img src="./images/fft_example_2.png" alt="drawing" width="300"/> 
 
 This image shows the FFT transformation. The black dot indicates that a filter of a certain size was applied; this is the high-pass filter. 
 
-<img src="./images/fft_example_48.png" alt="drawing" width="200"/> 
+<img src="./images/fft_example_48.png" alt="drawing" width="300"/> 
 
 This image represents the low-pass filter, which yielded better results. 
 
-<img src="./images/fft_defect_map.png" alt="drawing" width="200"/> 
+<img src="./images/fft_defect_map.png" alt="drawing" width="300"/> 
 
 This is the difference image after processing in the frequency domain. The defects are clearly visible, but unfortunately, some of the edges are also present.
 
@@ -99,7 +99,7 @@ We observe that the borders exhibit high differences; this could potentially be 
 
 Now we want to combine the insights from the GMM and FFT approaches to create a combined defect map. This method is still under evaluation to ensure that both contributions are effectively integrated.
 
-<img src="./images/voting.png" alt="drawing" width="200"/> 
+<img src="./images/voting.png" alt="drawing" width="600"/> 
 
 Here you can see the probability maps from the GMM, the FFT result, and their multiplication.
 
@@ -107,7 +107,35 @@ Here you can see the probability maps from the GMM, the FFT result, and their mu
 
 Finally, thresholding is applied, and we selected the 5 largest contours. This is not the optimal approach; it would be better to select contours based on shape or other characteristics, which remains a subject for future work.
 
-<img src="./images/voted_mask.png" alt="drawing" width="200"/> 
+In my B.Sc. project, I categorized lesions based on morphological features, and I believe we could apply a similar approach here. The ability to define regular characteristics and distinguish irregular objects is crucial.
+We can divide morphological characteristics into three main categories: form, shape, and orientation.
+For example: Roundness and elliptic-normalized circumference describe shape, Orientation can be assessed using the length-to-width ratio and Margins can be characterized using the lobulation index.
+
+<img src="./images/voted_mask.png" alt="drawing" width="300"/> 
 
 This is the current result. The next task will be to find a way to detect defect #2, and we also observed noise at the borders, which remains unresolved as zero padding alone did not help.
 
+## Evaluation 
+
+
+
+## Summary and Future Directions
+
+I used ORB for feature matching and alignment, then calculated the difference image, applied GMM and FFT, and combined the results before thresholding to produce a binary defect mask.
+Overall, the approach is straightforward, simple, yet creative, fast, and generalized.
+
+However, there are some limitations:
+
+The method misses some defects and misclassifies others.
+In the alignment step, while ORB performed better than SIFT, it is still not perfect. Since better alignment improves the difference image, refining this step is crucial.
+Possible improvements include iterative methods like ECC or deep learning-based feature matching such as LoFTR.
+We need to evaluate whether GMM adds useful information or if skipping it would be more effective.
+In the FFT step, we need a method to enhance delicate defects, possibly using a coarse-to-fine approach.
+Border effects remain an issue, as zero-padding did not help much.
+Exploring more sophisticated thresholding methods could further improve segmentation.
+The task was both interesting and highly applicable to the semiconductor industry, and I truly enjoyed working on it.
+
+<img src="./images/loftr_matching.png" alt="drawing" width="300"/> 
+
+Example for LoFTR matching, You can reproduce this matching using the notebook in the notebooks/ folder.
+LoFTR (Local Feature TRansformer) is a detector-free feature matching approach, making it more efficient and faster compared to methods that rely on interest point detection. LoFTR leverages the Transformer architecture, which widens its receptive field, allowing it to better match features in low-texture or corner-poor areas.

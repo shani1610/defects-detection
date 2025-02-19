@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 import imageio
 import os
+from skimage.segmentation import flood
 
 class Visualize:
     def __init__(self, img1, img2, img3=None):
@@ -103,6 +104,43 @@ class Visualize:
             plt.show()
         else:
             print("No inspected image found to visualize defects.")
+
+    def segment_defects(self, centers, tolerance=10):
+        """
+        Segments defects in the inspected image using a flood-fill algorithm from given center locations.
+        
+        Parameters:
+        - centers: List of tuples (x, y) representing the defect centers.
+        - tolerance: Intensity tolerance for region growing.
+        
+        Returns:
+        - mask: A binary mask (boolean NumPy array) where True indicates the defect regions.
+        """
+        if self.img1 is None:
+            print("No inspected image loaded for segmentation.")
+            return None
+        
+        # Convert image to grayscale if necessary
+        if len(self.img1.shape) > 2:
+            img_gray = cv2.cvtColor(self.img1, cv2.COLOR_BGR2GRAY)
+        else:
+            img_gray = self.img1
+        
+        # Initialize an empty mask
+        mask = np.zeros(img_gray.shape, dtype=bool)
+        
+        for center in centers:
+            # skimage's flood expects (row, col) i.e. (y, x)
+            seed_point = (center[1], center[0])
+            region_mask = flood(img_gray, seed_point=seed_point, tolerance=tolerance)
+            mask = np.logical_or(mask, region_mask)
+
+        plt.figure(figsize=(8, 8))
+        plt.imshow(mask, cmap='gray')
+        plt.axis("off")
+        plt.show()
+
+        return mask
     
     def show_two_images(self):
         """
