@@ -38,29 +38,10 @@ class FFTPipeline:
 
         # Apply mask and inverse FFT
         fshift_filtered = fshift * mask
-        
-        print(f"fshift shape: {fshift.shape} ")
-        print(f"mask shape: {mask.shape} ")
-        print(f"img shape: {img.shape} ")
 
-        # Visualization
-        plt.figure(figsize=(12, 5))
-        plt.subplot(1, 3, 1)
-        plt.imshow(np.log1p(np.abs(fshift)), cmap='gray')
-        plt.title("FFT Magnitude Spectrum")
-        plt.axis("off")
-        
-        plt.subplot(1, 3, 2)
-        plt.imshow(mask, cmap='gray')
-        plt.title(f"High-Pass Filter Mask, size: {size}")
-        plt.axis("off")
-        
-        plt.subplot(1, 3, 3)
-        plt.imshow(np.log1p(np.abs(fshift_filtered)), cmap='gray')
-        plt.title("Filtered FFT Spectrum")
-        plt.axis("off")
-        
-        plt.show()
+        self.mask = mask
+        self.fshift = fshift
+        self.fshift_filtered = fshift_filtered
 
         return fshift_filtered  # Keep in frequency domain
 
@@ -69,8 +50,8 @@ class FFTPipeline:
         f_ishift = np.fft.ifftshift(fshift_filtered)
         img_back = np.fft.ifft2(f_ishift)
         img_back = np.abs(img_back)
-        print(f"f_ishift shape: {f_ishift.shape} ")
-        print(f"img_back shape: {img_back.shape} ")
+        #print(f"f_ishift shape: {f_ishift.shape} ")
+        #print(f"img_back shape: {img_back.shape} ")
 
         # Normalize result to 0-255 range
         img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
@@ -101,6 +82,27 @@ class FFTPipeline:
         self.filtered_defect_map = filtered_defect_map
         
         return filtered_defect_map
+    
+    def visualize_freq_domain(self):
+
+        # Visualization
+        plt.figure(figsize=(12, 5))
+        plt.subplot(1, 3, 1)
+        plt.imshow(np.log1p(np.abs(self.fshift)), cmap='gray')
+        plt.title("FFT Magnitude Spectrum")
+        plt.axis("off")
+        
+        plt.subplot(1, 3, 2)
+        plt.imshow(self.mask, cmap='gray')
+        plt.title(f"High-Pass Filter Mask, size: {self.size}")
+        plt.axis("off")
+        
+        plt.subplot(1, 3, 3)
+        plt.imshow(np.log1p(np.abs(self.fshift_filtered)), cmap='gray')
+        plt.title("Filtered FFT Spectrum")
+        plt.axis("off")
+        
+        plt.show()
 
     def visualize(self):
         plt.imshow(self.filtered_defect_map, cmap='hot')

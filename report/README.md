@@ -1,6 +1,8 @@
 
 # Report on Defect Detection
 
+This project focuses on detecting and analyzing defects in semiconductor chips by aligning inspected and reference images.
+
 ## Introduction
 
 Semiconductors are manufactured using silicon, and individual silicon pieces are sampled to identify defects. Traditionally, defect detection involves comparing one chip with its neighboring chip due to the generally low probability of defects. In this report, I propose a novel approach that leverages both a reference image and an inspected image to detect defects more effectively.
@@ -16,7 +18,7 @@ The final output will be a binary image clearly indicating the detected defects.
 
 ## Examine
 
-First, let's examine what our inputs and desired output are. 
+First, let's examine what our inputs and desired output are.  
 
 <img src="./images/inspectedvsref.png" alt="drawing" width="400"/>
 
@@ -29,11 +31,11 @@ First, let's examine what our inputs and desired output are.
 
 <img src="./images/images_histograms.png" alt="drawing" width="400"/> 
 
-*This image shows the histogram and some statistical information. We can see that around gray level 42 there is a peak in the defect that is not seen in the reference. Overall, the histogram and statistics are quite similar, so we didn't apply any normalization, standardization, or other operations.*
+*This image shows the histogram and some statistical information. We can see that around gray level 42 there is a peak in the defect that is not seen in the reference. Overall, the histogram and statistics are quite similar, so we didn't apply any normalization, standardization, or other operations. I also added calculation of histograms comparison, for example for case 1 we got Bhattacharyya Distance': 0.1028, 'Chi-Square': 14673.47.*
 
 # Alignment 
 
-Although the images are similar and have the same orientation and grayscale distribution, they are not perfectly aligned. To accurately detect the defects, the images must be aligned. Alignment can be achieved using feature matching approaches. The most well-known method is SIFT, which is based on three steps: interest point detection, description of these interest points using a histogram of oriented gradients, and matching of the descriptions using kNN-based matcher or another matcher. However, results with SIFT weren't satisfactory, so I used ORB. ORB is efficient alternative to SIFT. it uses FAST keypoint detector and BRIEF descriptors and uses pyramid to produce multiscale features. 
+Although the images are similar and have the same orientation and grayscale distribution, they are not perfectly aligned. To accurately detect the defects, the images must be aligned. Alignment can be achieved using feature matching approaches. The most well-known method is SIFT, which is based on three steps: interest point detection, description of these interest points using a histogram of oriented gradients, and matching of the descriptions using kNN-based matcher or another matcher. However, results with SIFT weren't satisfactory, so I used ORB. ORB is efficient alternative to SIFT. it uses FAST keypoint detector and BRIEF descriptors and uses pyramid to produce multiscale features. I calculated reprojection error and for example in case 1 we got for ORB 75.0358, almost half than what we got from SIFT. 
 
 <img src="./images/orb_keypoints.png" alt="drawing" width="400"/>
 
@@ -109,13 +111,16 @@ For example: Roundness and elliptic-normalized circumference describe shape, Ori
 
 ## Evaluation 
 
-The best approach would be to get the ground truth mask, and compare it with the output mask. 
-to do this we need to invert the homography matrix and return the defect mask as the input inspected image was given. 
-then we can compute the dice coefficient. 
-it will be beneficial to compute the Precision and Recall. 
-this will allow us to know if specific refinement were helpful according to the required task. 
-maybe in this case high recall is preferable over missing some defects.
-this section will be future work as well. 
+The best approach would be to obtain the ground truth mask and compare it with the output defect mask.
+To achieve this, we need to invert the homography matrix and map the defect mask back to the original inspected image space.
+Once aligned, we can compute the Dice coefficient to evaluate segmentation accuracy.
+Additionally, computing Precision and Recall would be beneficial, as it allows us to assess whether specific refinements improve performance for the given task.
+In this case, high Recall may be preferable to minimize missed defects, even if it results in some false positives.
+This section will be part of future work.
+
+<img src="./images/ground_truth.png" alt="drawing" width="300"/> 
+
+*to generate a ground truth mask i used flood-fill algorithm from given center locations given in the text file, the flood algorithm is from skimage package.*
 
 ## Summary and Future Directions
 
@@ -131,23 +136,32 @@ We need to evaluate whether GMM adds useful information or if skipping it would 
 In the FFT step, we need a method to enhance delicate defects, possibly using a coarse-to-fine approach.
 Border effects remain an issue, as zero-padding did not help much.
 It is beneficial to check other combination for the voting mechanism such as averaging. 
-Exploring more sophisticated thresholding methods could further improve segmentation.
-The task was both interesting and highly applicable to the semiconductor industry, and I truly enjoyed working on it.
+Exploring more sophisticated thresholding methods could further improve segmentation, for example adaptive thresholding. 
+In addition, there are some hyperparameter that can be further tuned for example the number of components in the GMM, and size of filter in FFT. 
+
+The task was both interesting and highly applicable, and I truly enjoyed working on it.
 
 ## Appendix 
 
 ### Results for case 2
 
-### Results for case 1 
+<img src="./images/overlayed_case2.png" alt="drawing" width="300"/> 
+
+<img src="./images/voting_case2.png" alt="drawing" width="500"/> 
+
+<img src="./images/voted_mask_case2.png" alt="drawing" width="300"/> 
+
+### Results for case 3 
+
+<img src="./images/overlayed_case3.png" alt="drawing" width="300"/> 
+
+<img src="./images/voting_case3.png" alt="drawing" width="500"/> 
+
+<img src="./images/voted_mask_case3.png" alt="drawing" width="300"/> 
 
 ### Deep Learning Feature Matching 
 
-<img src="./images/loftr_matching.png" alt="drawing" width="300"/> 
+<img src="./images/loftr_matching.png" alt="drawing" width="500"/> 
 
 Example for LoFTR matching, You can reproduce this matching using the notebook in the notebooks/ folder.
 LoFTR (Local Feature TRansformer) is a detector-free feature matching approach, making it more efficient and faster compared to methods that rely on interest point detection. LoFTR leverages the Transformer architecture, which widens its receptive field, allowing it to better match features in low-texture or corner-poor areas.
-
-some middle images for other cases: 
-<img src="./images/overlayed_case2.png" alt="drawing" width="300"/> 
-
-<img src="./images/voting_case2.png" alt="drawing" width="300"/> 

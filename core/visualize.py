@@ -200,6 +200,57 @@ class Visualize:
         
         plt.show()
 
+    def plot_voting(self, confidence_gmm, confidence_fft, combined_confidence, n_components, percentile, gaus_kernel, size):
+
+        # Optionally, visualize the confidence maps before thresholding
+        plt.figure(figsize=(15, 5))
+        plt.subplot(1,3,1)
+        plt.imshow(confidence_gmm, cmap='jet')
+        plt.title(f"GMM Defect Confidence\n num components = {n_components}\n percentile = {percentile}", fontsize=12, fontweight='bold')
+        plt.colorbar()
+        plt.axis("off")
+
+        plt.subplot(1,3,2)
+        plt.imshow(confidence_fft, cmap='jet')
+        plt.title(f"FFT Defect Confidence\n Gaus Kernel = {gaus_kernel}\n size = {size}", fontsize=12, fontweight='bold')
+        plt.axis("off")
+        plt.colorbar()
+
+        plt.subplot(1,3,3)
+        plt.imshow(combined_confidence, cmap='jet')
+        plt.title("Combined Confidence\n (multiplicaiton)", fontsize=12, fontweight='bold')
+        plt.axis("off")
+        plt.colorbar()
+        plt.show()
+    
+    def final_voting(self, final_voted_mask, threshold_val):
+        """
+        Display the two images side by side using Matplotlib.
+        """
+        if self.img1 is None or self.img2 is None:
+            raise ValueError("One or both images could not be loaded.")
+        
+        img1_rgb = cv2.cvtColor(self.img1, cv2.COLOR_BGR2RGB) if len(self.img1.shape) == 3 else self.img1
+        img2_rgb = cv2.cvtColor(self.img2, cv2.COLOR_BGR2RGB) if len(self.img2.shape) == 3 else self.img2
+        
+        label1 = self.extract_label(self.img1_path, "Image 1")
+        label2 = self.extract_label(self.img2_path, "Image 2")
+        
+        fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+        axes[0].imshow(img1_rgb, cmap='gray' if len(self.img1.shape) == 2 else None)
+        axes[0].set_title(label1)
+        axes[0].axis("off")
+        
+        axes[1].imshow(img2_rgb, cmap='gray' if len(self.img2.shape) == 2 else None)
+        axes[1].set_title(label2)
+        axes[1].axis("off")
+
+        axes[2].imshow(final_voted_mask, cmap='gray' if len(self.img2.shape) == 2 else None)
+        axes[2].set_title(f"Final Voted Defect Mask\n threshold val = {threshold_val}")
+        axes[2].axis("off")
+        
+        plt.show()
+
 # Example Usage:
 # vis = Visualize("image1.jpg", "image2.jpg")
 # vis.show_two_images()
