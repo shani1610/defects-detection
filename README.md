@@ -2,7 +2,7 @@
 
 This project focuses on detecting and analyzing defects in semiconductor chips by aligning inspected and reference images and generating a reliable binary defect mask.
 
-Technical report is provided [here](https://github.com/shani1610/defects-detection/tree/main/report).
+The technical report is available [here](https://github.com/shani1610/defects-detection/tree/main/report). Initially, I analyzed the histogram and other key metrics to determine if image enhancement was necessary. Next, I used ORB for image alignment. Since the difference image results were unsatisfactory, I employed machine learning and image processing techniques, specifically Gaussian Mixture Models (GMM) and Fast Fourier Transform (FFT), to extract additional image features. Finally, I applied a voting mechanism followed by thresholding to generate the final result image.
 
 <img src="./report/images/intro.png" alt="drawing" width="300"/> 
 
